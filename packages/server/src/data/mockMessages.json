@@ -1,0 +1,40 @@
+{
+    "conversations": [
+        {
+            "id": "conv-001",
+            "title": "첫 번째 대화",
+            "messages": [
+                {
+                    "id": "msg-001",
+                    "role": "user",
+                    "content": "안녕하세요! 오늘 날씨가 어때요?",
+                    "createdAt": "2023-07-15T10:00:00.000Z",
+                    "status": "success"
+                },
+                {
+                    "id": "msg-002",
+                    "role": "assistant",
+                    "content": "안녕하세요! 오늘 날씨는 맑고 화창합니다. 어떻게 도와드릴까요?",
+                    "createdAt": "2023-07-15T10:00:05.000Z",
+                    "status": "success"
+                },
+                {
+                    "id": "msg-003",
+                    "role": "user",
+                    "content": "React에서 상태 관리를 어떻게 하면 좋을까요?",
+                    "createdAt": "2023-07-15T10:01:00.000Z",
+                    "status": "success"
+                },
+                {
+                    "id": "msg-004",
+                    "role": "assistant",
+                    "content": "React에서 상태 관리 방법은 여러 가지가 있습니다.\n\n1. **useState** - 간단한 상태 관리용\n   ```jsx\n   const [count, setCount] = useState(0);\n   ```\n\n2. **useReducer** - 복잡한 상태 로직 처리\n   ```jsx\n   const [state, dispatch] = useReducer(reducer, initialState);\n   ```\n\n3. **Context API** - 컴포넌트 트리 전체에 데이터 제공\n   ```jsx\n   <ThemeContext.Provider value={theme}>\n     <App />\n   </ThemeContext.Provider>\n   ```\n\n4. **외부 라이브러리**\n   - Redux - 예측 가능한 상태 관리\n   - MobX - 반응형 상태 관리\n   - Zustand - 간단하고 빠른 상태 관리\n   - Recoil - Facebook의 실험적 상태 관리\n\n프로젝트 규모와 복잡성에 따라 적절한 방법을 선택하시면 됩니다.",
+                    "createdAt": "2023-07-15T10:01:15.000Z",
+                    "status": "success"
+                }
+            ],
+            "createdAt": "2023-07-15T10:00:00.000Z",
+            "updatedAt": "2023-07-15T10:01:15.000Z"
+        }
+    ]
+}

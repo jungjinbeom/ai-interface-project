@@ -1,0 +1,24 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# pnpm 설치
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 개발용 파일 복사
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
+COPY packages/client/package.json ./packages/client/
+COPY packages/server/package.json ./packages/server/
+COPY packages/shared/package.json ./packages/shared/
+
+# 의존성 설치
+RUN pnpm install
+
+# 소스 복사
+COPY . .
+
+# 포트 오픈
+EXPOSE 3000 3001
+
+# 개발 서버 실행
+CMD ["pnpm", "dev"]
