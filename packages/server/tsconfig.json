@@ -3,6 +3,7 @@
     "compilerOptions": {
         "outDir": "dist",
         "rootDir": "src",
+        "baseUrl": ".",
         "module": "ESNext",
         "moduleResolution": "Node",
         "esModuleInterop": true,
@@ -12,7 +13,7 @@
             "@hooks/*": ["src/hooks/*"],
             "@utils/*": ["src/utils/*"],
             "@types/*": ["src/types/*"],
-            "shared": ["shared/src"],
+            "shared": ["../shared/src"],
             "shared/*": ["../shared/src/*"]
         }
     },

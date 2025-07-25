@@ -1,6 +1,6 @@
 import React from 'react';
-import { ChatMessage } from 'shared/types/chat';
-import StreamingMarkdown from '@/components/StreamingMarkdown';
+import { ChatMessage } from 'shared';
+import StreamingMarkdown from '@/shared/ui/StreamingMarkdown';
 
 interface MarkdownMessageItemProps {
     message: ChatMessage;
@@ -22,7 +22,7 @@ const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
         <StreamingMarkdown
             markdown={isStreaming ? streamingContent || '' : message.content}
             isStreaming={isStreaming}
-            className="prose prose-sm max-w-none prose-pre:bg-gray-50 prose-pre:p-2"
+            className="prose prose-sm max-w-none prose-invert prose-pre:bg-gray-700 prose-pre:p-2"
         />
     );
 
@@ -30,7 +30,7 @@ const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
         <div className={`mb-4 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
                 className={`max-w-3/4 rounded-lg px-4 py-2 ${
-                    isUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
+                    isUser ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
                 } ${
                     message.status === 'sending'
                         ? 'opacity-70'

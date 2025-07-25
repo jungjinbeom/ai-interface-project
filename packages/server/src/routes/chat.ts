@@ -4,78 +4,173 @@ import fs from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { ChatCompletionRequest, ChatCompletionResponse, ChatMessage } from 'shared/types/chat';
+import { openaiService } from '@/services/openai';
+import { fallbackService } from '@/services/fallback';
+import { threadManager, ChatThread } from '@/services/threadManager';
+import OpenAI from 'openai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export function registerChatRoutes(fastify: FastifyInstance) {
-    // GET 메시지 목록 조회
-    fastify.get('/api/conversations', async (request, reply) => {
+    // GET all threads
+    fastify.get('/api/threads', async (request, reply) => {
         try {
-            // JSON 파일에서 대화 목록 읽기
-            const dataPath = join(__dirname, '../data/mockMessages.json');
-            const data = await fs.readFile(dataPath, 'utf-8');
-            const { conversations } = JSON.parse(data);
-
-            return reply.send({ conversations });
+            const threads = threadManager.getAllThreads();
+            return reply.send({ threads });
         } catch (err) {
             fastify.log.error(err);
-            return reply.code(500).send({ error: '대화 목록을 불러오는데 실패했습니다.' });
+            return reply.code(500).send({ error: 'Failed to get threads' });
         }
     });
 
-    // GET 특정 대화 조회
-    fastify.get<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
+    // GET specific thread
+    fastify.get<{ Params: { id: string } }>('/api/threads/:id', async (request, reply) => {
         try {
             const { id } = request.params;
-            const dataPath = join(__dirname, '../data/mockMessages.json');
-            const data = await fs.readFile(dataPath, 'utf-8');
-            const { conversations } = JSON.parse(data);
+            const thread = threadManager.getThread(id);
 
-            const conversation = conversations.find((conv: any) => conv.id === id);
-
-            if (!conversation) {
-                return reply.code(404).send({ error: '대화를 찾을 수 없습니다.' });
+            if (!thread) {
+                return reply.code(404).send({ error: 'Thread not found' });
             }
 
-            return reply.send({ conversation });
+            return reply.send({ thread });
         } catch (err) {
             fastify.log.error(err);
-            return reply.code(500).send({ error: '대화를 불러오는데 실패했습니다.' });
+            return reply.code(500).send({ error: 'Failed to get thread' });
         }
     });
 
-    // POST 메시지 전송
-    fastify.post<{ Body: ChatCompletionRequest }>('/api/chat', async (request, reply) => {
+    // POST create new thread
+    fastify.post('/api/threads', async (request, reply) => {
         try {
-            const { messages, conversationId } = request.body;
+            const thread = threadManager.createThread();
+            return reply.send({ thread });
+        } catch (err) {
+            fastify.log.error(err);
+            return reply.code(500).send({ error: 'Failed to create thread' });
+        }
+    });
 
-            // 마지막 메시지 가져오기
-            const lastMessage = messages[messages.length - 1];
+    // DELETE thread
+    fastify.delete<{ Params: { id: string } }>('/api/threads/:id', async (request, reply) => {
+        try {
+            const { id } = request.params;
+            const deleted = threadManager.deleteThread(id);
 
-            // 봇 응답 생성
+            if (!deleted) {
+                return reply.code(404).send({ error: 'Thread not found' });
+            }
+
+            return reply.send({ success: true });
+        } catch (err) {
+            fastify.log.error(err);
+            return reply.code(500).send({ error: 'Failed to delete thread' });
+        }
+    });
+
+    // PUT update thread title
+    fastify.put<{ Params: { id: string }; Body: { title: string } }>('/api/threads/:id', async (request, reply) => {
+        try {
+            const { id } = request.params;
+            const { title } = request.body;
+            const updated = threadManager.updateThreadTitle(id, title);
+
+            if (!updated) {
+                return reply.code(404).send({ error: 'Thread not found' });
+            }
+
+            return reply.send({ success: true });
+        } catch (err) {
+            fastify.log.error(err);
+            return reply.code(500).send({ error: 'Failed to update thread' });
+        }
+    });
+
+    // POST send message to thread
+    fastify.post<{ Body: ChatCompletionRequest & { threadId?: string } }>('/api/chat', async (request, reply) => {
+        try {
+            const { messages, threadId } = request.body;
+            let currentThreadId = threadId;
+            let responseContent: string;
+
+            // Create new thread if none provided
+            if (!currentThreadId) {
+                const userMessage = messages[messages.length - 1];
+                const newThread = threadManager.createThread(userMessage?.content);
+                currentThreadId = newThread.id;
+            }
+
+            // Get or create thread
+            let thread = threadManager.getThread(currentThreadId);
+            if (!thread) {
+                const userMessage = messages[messages.length - 1];
+                thread = threadManager.createThread(userMessage?.content);
+                currentThreadId = thread.id;
+            }
+
+            // Add user message to thread
+            const userMessage = messages[messages.length - 1];
+            const userChatMessage: ChatMessage = {
+                id: uuidv4(),
+                role: userMessage.role,
+                content: userMessage.content,
+                createdAt: new Date().toISOString(),
+                status: 'success',
+            };
+            threadManager.addMessageToThread(currentThreadId, userChatMessage);
+
+            // Generate AI response
+            console.log('OpenAI initialized:', openaiService.isInitialized());
+            console.log('OpenAI init error:', openaiService.getInitError());
+            if (!openaiService.isInitialized()) {
+                // Fallback service
+                const fallbackMessages = messages.map((msg) => ({
+                    role: msg.role as 'user' | 'assistant' | 'system',
+                    content: msg.content,
+                }));
+
+                const fallbackResponse = await fallbackService.createMockChatCompletion(fallbackMessages);
+                responseContent = `⚠️ OpenAI API가 설정되지 않았습니다.\n\n${fallbackResponse.content}\n\n💡 실제 AI 응답을 받으려면:\n1. .env 파일에 OPENAI_API_KEY를 설정하세요\n2. 서버를 재시작하세요`;
+            } else {
+                // OpenAI API call
+                const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = messages.map((msg) => ({
+                    role: msg.role as 'user' | 'assistant' | 'system',
+                    content: msg.content,
+                }));
+
+                const openaiResponse = await openaiService.createChatCompletion(openaiMessages);
+
+                if (!openaiResponse || !openaiResponse.content) {
+                    throw new Error('OpenAI API 응답이 유효하지 않습니다.');
+                }
+
+                responseContent = openaiResponse.content;
+            }
+
+            // Create bot response
             const botResponse: ChatMessage = {
                 id: uuidv4(),
                 role: 'assistant',
-                content: `이것은 "${lastMessage.content}"에 대한 응답입니다. 모의 API에서 생성된 답변입니다.`,
+                content: responseContent,
                 createdAt: new Date().toISOString(),
                 status: 'success',
             };
 
-            // 응답 준비
+            // Add bot response to thread
+            threadManager.addMessageToThread(currentThreadId, botResponse);
+
+            // Prepare response
             const response: ChatCompletionResponse = {
                 id: uuidv4(),
                 message: botResponse,
-                conversationId: conversationId || uuidv4(),
+                conversationId: currentThreadId,
             };
-
-            // 약간의 지연을 추가하여 실제 API 호출처럼 보이게 함
-            await new Promise((resolve) => setTimeout(resolve, 500));
 
             return reply.send(response);
         } catch (err) {
             fastify.log.error(err);
-            return reply.code(500).send({ error: '메시지 처리 중 오류가 발생했습니다.' });
+            return reply.code(500).send({ error: 'Failed to process message' });
         }
     });
 }

@@ -19,10 +19,15 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["src/*"],
+            "@/shared": ["src/shared"],
+            "@/shared/*": ["src/shared/*"],
+            "@/features": ["src/features"],
+            "@/features/*": ["src/features/*"],
+            "@components/*": ["src/components/*"],
             "@hooks/*": ["src/hooks/*"],
             "@utils/*": ["src/utils/*"],
             "@types/*": ["src/types/*"],
-            "shared": ["shared/src"],
+            "shared": ["../shared/src"],
             "shared/*": ["../shared/src/*"]
         }
     },

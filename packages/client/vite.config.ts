@@ -16,12 +16,15 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@': resolve(__dirname, './src'),
+            '@/shared': resolve(__dirname, './src/shared'),
+            '@/features': resolve(__dirname, './src/features'),
             '@components': resolve(__dirname, './src/components'),
             '@hooks': resolve(__dirname, './src/hooks'),
             '@utils': resolve(__dirname, './src/utils'),
             '@types': resolve(__dirname, './src/types'),
+            '@': resolve(__dirname, './src'),
             shared: resolve(__dirname, '../shared/src'),
         },
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
 });

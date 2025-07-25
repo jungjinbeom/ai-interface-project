@@ -1,21 +1,29 @@
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Load environment variables from project root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+config({ path: join(__dirname, '../../../.env') });
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import websocket from '@fastify/websocket';
 import fastifySSEPlugin from 'fastify-sse-v2';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 // 라우트 handlers
 import { registerChatRoutes } from './routes/chat.js';
 import { registerStreamRoutes } from './routes/stream.js';
 import { registerSSERoutes } from './routes/sse.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { registerTestRoutes } from './routes/test.js';
+import { openaiService } from './services/openai.js';
 
 async function startServer() {
+    // Reinitialize OpenAI service after .env is loaded
+    openaiService.reinitialize();
+
     const fastify = Fastify({
         logger: true,
     });
@@ -79,13 +87,13 @@ async function startServer() {
     });
 
     // 플러그인 등록
-    await fastify.register(websocket);
     await fastify.register(fastifySSEPlugin);
 
     // 라우트 등록
     registerChatRoutes(fastify);
     registerStreamRoutes(fastify);
     registerSSERoutes(fastify);
+    registerTestRoutes(fastify);
 
     // 서버 시작
     try {

@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface InputBoxProps {
     onSendMessage: (message: string) => void;
+    disabled?: boolean;
 }
 
-const InputBox: React.FC<InputBoxProps> = ({ onSendMessage }) => {
+const InputBox: React.FC<InputBoxProps> = ({ onSendMessage, disabled = false }) => {
     const [message, setMessage] = useState('');
     const [isComposing, setIsComposing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,7 +51,7 @@ const InputBox: React.FC<InputBoxProps> = ({ onSendMessage }) => {
         <div className="flex items-end">
             <textarea
                 ref={textareaRef}
-                className="flex-1 resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="flex-1 resize-none border border-gray-600 bg-gray-700 text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
                 placeholder="메시지를 입력하세요..."
                 rows={1}
                 value={message}
@@ -58,11 +59,12 @@ const InputBox: React.FC<InputBoxProps> = ({ onSendMessage }) => {
                 onKeyDown={handleKeyDown}
                 onCompositionStart={() => setIsComposing(true)}
                 onCompositionEnd={() => setIsComposing(false)}
+                disabled={disabled}
             />
             <button
-                className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onClick={handleSubmit}
-                disabled={!message.trim()}
+                disabled={!message.trim() || disabled}
             >
                 전송
             </button>
