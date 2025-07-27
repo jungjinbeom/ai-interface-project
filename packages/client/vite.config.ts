@@ -11,6 +11,37 @@ export default defineConfig({
             '/api': {
                 target: 'http://localhost:3001',
                 changeOrigin: true,
+                timeout: 60000,
+                proxyTimeout: 60000,
+                secure: false,
+                ws: false,
+                configure: (proxy, _options) => {
+                    proxy.on('error', (err, req, res) => {
+                        console.log('Proxy error:', err.message);
+                        console.log('Request URL:', req.url);
+                        if (!res.headersSent) {
+                            res.writeHead(500, {
+                                'Content-Type': 'application/json',
+                            });
+                            res.end(JSON.stringify({ error: 'Proxy error: ' + err.message }));
+                        }
+                    });
+                    proxy.on('proxyReq', (proxyReq, req, _res) => {
+                        console.log('→ Proxy Request:', req.method, req.url, '→', proxyReq.getHeader('host'));
+                    });
+                    proxy.on('proxyRes', (proxyRes, req, _res) => {
+                        console.log('← Proxy Response:', proxyRes.statusCode, req.url);
+                    });
+                    proxy.on('proxyReqError', (err, req, res) => {
+                        console.log('Proxy request error:', err.message, 'for', req.url);
+                        if (!res.headersSent) {
+                            res.writeHead(500, {
+                                'Content-Type': 'application/json',
+                            });
+                            res.end(JSON.stringify({ error: 'Proxy request error: ' + err.message }));
+                        }
+                    });
+                },
             },
         },
     },

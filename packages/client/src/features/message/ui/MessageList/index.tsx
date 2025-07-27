@@ -29,6 +29,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
         setShowScrollButton(!isNearBottom && messages.length > 0);
     };
 
+    const throttledHandleScroll = React.useCallback(() => {
+        let ticking = false;
+        return () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    handleScroll();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+    }, [])();
+
     // Auto-scroll logic: only scroll automatically if user hasn't manually scrolled up
     useEffect(() => {
         if (!userScrolled) {
@@ -53,9 +66,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
         <div className="relative h-full flex flex-col">
             <div
                 ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto p-4 scroll-smooth"
-                onScroll={handleScroll}
-                style={{ scrollBehavior: 'smooth' }}
+                className="flex-1 overflow-y-auto p-4"
+                onScroll={throttledHandleScroll}
+                style={{
+                    scrollBehavior: 'smooth',
+                    willChange: 'scroll-position',
+                    transform: 'translateZ(0)', // Force hardware acceleration
+                }}
             >
                 {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-400">대화를 시작해보세요.</div>

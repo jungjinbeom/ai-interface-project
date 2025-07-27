@@ -10,7 +10,9 @@ export function registerChatRoutes(fastify: FastifyInstance) {
     // GET all threads
     fastify.get('/api/threads', async (request, reply) => {
         try {
+            console.log('GET /api/threads called');
             const threads = threadManager.getAllThreads();
+            console.log(`Found ${threads.length} threads`);
             return reply.send({ threads });
         } catch (err) {
             fastify.log.error(err);

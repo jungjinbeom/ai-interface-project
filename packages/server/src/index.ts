@@ -32,6 +32,12 @@ async function startServer() {
     await fastify.register(cors, {
         origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+
+    // Request logging middleware
+    fastify.addHook('onRequest', async (request, reply) => {
+        console.log(`[${new Date().toISOString()}] ${request.method} ${request.url}`);
     });
 
     // Swagger 문서 설정 - OpenAPI 3.0 사용
