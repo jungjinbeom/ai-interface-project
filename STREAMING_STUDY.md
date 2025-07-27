@@ -128,127 +128,149 @@ class SSEStreamingHandler {
 - SSE 프로토콜 이해
 - React 상태 관리 패턴 학습
 
-### 2. 자동 재연결 메커니즘 (난이도: ⭐⭐⭐)
+### 2. SSE 스트림 Abort 로직 구현 (난이도: ⭐⭐⭐)
 
 #### 문제점
 
-- 네트워크 끊김 시 스트림 연결 복구 불가
-- 사용자가 수동으로 재시도해야 함
+- 사용자가 스트리밍 중 응답을 중단할 수 없음
+- 새로운 메시지 전송 시 이전 스트림이 계속 실행됨
+- 메모리 누수 및 불필요한 네트워크 사용
 
 #### 개선 과제
 
 ```typescript
-// TODO: packages/client/src/features/chat/lib/reconnectionManager.ts 생성
+// TODO: packages/client/src/features/chat/lib/streamingController.ts 생성
 
-interface ReconnectionConfig {
-    maxRetries: number;
-    retryDelay: number;
-    backoffMultiplier: number;
-    maxDelay: number;
+interface StreamController {
+    abortController: AbortController;
+    streamId: string;
+    isActive: boolean;
 }
 
-class ReconnectionManager {
+class StreamingAbortManager {
+    private activeStreams: Map<string, StreamController>;
+
     // 구현해야 할 메서드들:
-    // - scheduleReconnection(): void
-    // - calculateDelay(attempt: number): number
-    // - shouldRetry(error: Error): boolean
-    // - reset(): void
+    startStream(streamId: string): AbortController;
+    abortStream(streamId: string): void;
+    abortAllStreams(): void;
+    isStreamActive(streamId: string): boolean;
+    cleanup(): void;
 }
 ```
 
 **구현 요구사항**:
 
-- 지수 백오프 알고리즘 적용
-- 네트워크 상태 감지
-- 재연결 시 진행 상태 복원
-- 사용자에게 재연결 상태 알림
+- AbortController를 활용한 스트림 취소
+- 여러 스트림 동시 관리
+- 컴포넌트 언마운트 시 자동 정리
+- 사용자 인터페이스에 "중단" 버튼 추가
+- 중단된 메시지 상태 처리
 
 **학습 포인트**:
 
-- 네트워크 복원력 설계
-- 지수 백오프 패턴
-- 상태 머신 구현
+- AbortController API 활용
+- 리소스 생명주기 관리
+- 사용자 경험 개선
 
-### 2. 실시간 성능 모니터링 (난이도: ⭐⭐⭐)
+### 3. 스트림 출력 속도 조절 및 청크 최적화 (난이도: ⭐⭐⭐)
 
 #### 문제점
 
-- 스트리밍 성능 가시성 부족
-- 병목 지점 식별 어려움
+- 스트리밍 속도가 너무 빨라 사용자가 읽기 어려움
+- 청크 크기가 일정하지 않아 UI 깜빡임 발생
+- 네트워크 대역폭에 따른 적응형 처리 부족
 
 #### 개선 과제
 
 ```typescript
-// TODO: packages/client/src/features/chat/lib/performanceMonitor.ts 생성
+// TODO: packages/client/src/features/chat/lib/streamThrottler.ts 생성
 
-interface PerformanceMetrics {
-    latency: number;
-    throughput: number;
-    errorRate: number;
-    memoryUsage: number;
+interface ThrottleConfig {
+    minDelay: number; // 최소 지연 시간
+    maxDelay: number; // 최대 지연 시간
+    chunkSize: number; // 청크 크기
+    adaptiveMode: boolean; // 적응형 모드
 }
 
-class PerformanceMonitor {
+class StreamThrottler {
     // 구현해야 할 메서드들:
-    // - startMeasurement(id: string): void
-    // - endMeasurement(id: string): number
-    // - recordMetric(name: string, value: number): void
-    // - getReport(): PerformanceMetrics
+    throttleChunk(chunk: string, config: ThrottleConfig): Promise<string[]>;
+    calculateOptimalDelay(networkSpeed: number): number;
+    adjustChunkSize(contentType: string): number;
+    enableTypingEffect(element: HTMLElement): void;
 }
 ```
 
 **구현 요구사항**:
 
-- 지연시간 측정
-- 메모리 사용량 추적
-- 에러율 계산
-- 실시간 대시보드 (선택사항)
+- 타이핑 효과로 점진적 텍스트 표시
+- 네트워크 속도 감지 및 적응형 조절
+- 청크 크기 동적 조정
+- 사용자 설정으로 속도 커스터마이징
+- 코드 블록과 일반 텍스트 구분 처리
 
 **학습 포인트**:
 
-- 성능 메트릭 설계
-- 실시간 모니터링
-- 데이터 시각화
+- 성능과 UX 밸런스
+- 적응형 알고리즘 설계
+- DOM 조작 최적화
 
-### 3. 기본 테스트 구현 (난이도: ⭐⭐)
+### 4. SSE 이벤트 처리 로직 최적화 (난이도: ⭐⭐⭐⭐)
 
 #### 문제점
 
-- SSE 스트리밍 테스트 부족
-- 에러 시나리오 검증 필요
+- 이벤트 처리 중 메모리 누수 발생 가능
+- 대용량 스트림 처리 시 성능 저하
+- 에러 복구 로직 부족
+- 이벤트 순서 보장 미흡
 
 #### 개선 과제
 
 ```typescript
-// TODO: packages/client/src/features/chat/lib/__tests__/streamingHandler.test.ts
+// TODO: packages/client/src/features/chat/lib/optimizedSSEHandler.ts 생성
 
-class MockSSEStream {
-    // 구현해야 할 메서드들:
-    // - sendChunk(data: string): void
-    // - sendError(error: string): void
-    // - complete(): void
+interface OptimizedSSEConfig {
+    bufferSize: number;
+    maxMemoryUsage: number;
+    enableCompression: boolean;
+    enableRetry: boolean;
+    eventPriority: EventPriority[];
 }
 
-// 테스트 케이스들:
-// - 정상적인 스트리밍 플로우
-// - 네트워크 에러 시나리오
-// - 타임아웃 처리
+class OptimizedSSEHandler extends SSEStreamingHandler {
+    private eventQueue: PriorityQueue<SSEEvent>;
+    private memoryMonitor: MemoryMonitor;
+    private compressionWorker: Worker;
+
+    // 구현해야 할 메서드들:
+    processEventQueue(): void;
+    handleBackpressure(): void;
+    compressLargePayloads(data: string): Promise<string>;
+    validateEventSequence(event: SSEEvent): boolean;
+    recoverFromError(error: Error): Promise<void>;
+}
 ```
 
 **구현 요구사항**:
 
-- Mock SSE 스트림 생성기
-- 기본적인 에러 시나리오 시뮬레이션
-- 단위 테스트 작성
+- 이벤트 우선순위 큐 구현
+- 메모리 사용량 모니터링 및 제한
+- Web Worker를 활용한 압축 처리
+- 이벤트 순서 검증 및 재정렬
+- 자동 에러 복구 메커니즘
+- 백프레셔(backpressure) 처리
 
 **학습 포인트**:
 
-- 비동기 코드 테스팅
-- Mock 객체 설계
+- 고성능 이벤트 처리
+- 메모리 관리 고급 기법
+- Web Worker 활용
+- 분산 시스템 개념
 
 ## 🎨 UI/UX 개선 과제
 
-### 4. 에러 상태 UI 개선 (난이도: ⭐⭐)
+### 5. 에러 상태 UI 개선 (난이도: ⭐⭐)
 
 #### 개선 과제
 
@@ -277,15 +299,16 @@ pnpm test --watch
 ```bash
 # 개선하고 싶은 영역으로 브랜치 생성 (본인 이름 포함)
 git checkout -b feature/system-analysis-{your-name}
-git checkout -b feature/reconnection-{your-name}
-git checkout -b feature/performance-{your-name}
-git checkout -b feature/testing-{your-name}
+git checkout -b feature/stream-abort-{your-name}
+git checkout -b feature/stream-throttle-{your-name}
+git checkout -b feature/sse-optimization-{your-name}
 git checkout -b feature/error-ui-{your-name}
 
 # 예시:
 git checkout -b feature/system-analysis-jihoon
-git checkout -b feature/reconnection-sarah
-git checkout -b feature/performance-alex
+git checkout -b feature/stream-abort-sarah
+git checkout -b feature/stream-throttle-alex
+git checkout -b feature/sse-optimization-mike
 ```
 
 ### 3. 구현 및 테스트
@@ -315,4 +338,5 @@ git checkout -b feature/performance-alex
 - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 - [MSW (Mock Service Worker)](https://mswjs.io/)
 
+**전체 과제를 다 읽으셨다면 지금 바로 스터디장에게 API key를 달라고 요청해주세요!**
 **화이팅! 🚀**
