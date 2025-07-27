@@ -60,18 +60,6 @@ class SSEStreamingHandler {
 - `data: [DONE]` - 스트림 완료
 - `event: error` - 에러 발생
 
-#### 🔄 useSendMessageMutation 리팩토링 효과
-
-**Before (기존)**: 170줄의 복잡한 인라인 스트리밍 로직
-**After (개선)**: 50줄의 깔끔한 콜백 기반 처리
-
-**주요 개선점**:
-
-- 관심사 분리: 스트리밍 로직 vs 상태 관리
-- 재사용성: 다른 컴포넌트에서도 사용 가능
-- 테스트 용이성: 독립적인 클래스로 단위 테스트 가능
-- 가독성: 비즈니스 로직과 기술적 구현 분리
-
 ### 개선 대상 영역
 
 1. **에러 처리 및 복구**
@@ -82,7 +70,7 @@ class SSEStreamingHandler {
 
 ## 🔧 개선 과제 목록
 
-### 1. 현재 시스템 분석 및 문서화 (난이도: ⭐ - 초급자용)
+### 1. 현재 시스템 분석 (난이도: ⭐ - 초급자용)
 
 #### 문제점
 
@@ -117,7 +105,7 @@ class SSEStreamingHandler {
 
 **구현 요구사항**:
 
-- 코드를 직접 읽고 실행 흐름 파악
+- 전체 및 일부 코드 플로우 및 데이터 구조 등 문서화
 - 브라우저 개발자 도구로 네트워크 탭 관찰
 - 실제 스트리밍 과정을 단계별로 기록
 - 개선점 3-5개 제안
@@ -128,7 +116,45 @@ class SSEStreamingHandler {
 - SSE 프로토콜 이해
 - React 상태 관리 패턴 학습
 
-### 2. SSE 스트림 Abort 로직 구현 (난이도: ⭐⭐⭐)
+### 2. 컴포넌트 개선 (난이도: ⭐)
+
+#### 문제점
+
+- 기존 컴포넌트들의 UX 및 성능상 개선 여지 존재
+- 사용자 경험 최적화 필요
+
+#### 개선 과제
+
+```typescript
+// 어떤 부분이라도, 개선이 필요한 컴포넌트 개선
+// 예시: MessageList, MessageItem, InputBox, Sidebar 등
+
+// UX적 개선 예시:
+- 더 나은 로딩 상태 표시
+- 애니메이션 및 트랜지션 개선
+- 에러 상태 피드백 개선
+- 인터랙션 개선 (hover, focus 등)
+
+// 성능상 개선 예시:
+- 불필요한 리렌더링 방지
+- 메모이제이션 최적화
+- 상태 관리 최적화
+- DOM 조작 최적화
+```
+
+**구현 요구사항**:
+
+- 개선 대상 컴포넌트 선택 및 이유 설명
+- UX적 개선 혹은 성능상의 개선 등 어떠한 개선이든 이유와 함께 리팩토링
+- 개선 전후 비교 및 측정 가능한 지표 제시
+
+**학습 포인트**:
+
+- React 성능 최적화
+- 사용자 경험 설계
+- 컴포넌트 설계 패턴
+
+### 3. SSE 스트림 Abort 로직 구현 (난이도: ⭐⭐⭐)
 
 #### 문제점
 
@@ -165,7 +191,7 @@ class StreamingAbortManager {
 - 여러 스트림 동시 관리
 - 컴포넌트 언마운트 시 자동 정리
 - 사용자 인터페이스에 "중단" 버튼 추가
-- 중단된 메시지 상태 처리
+- 중단 후 다시 시작 가능하게 구현
 
 **학습 포인트**:
 
@@ -173,7 +199,7 @@ class StreamingAbortManager {
 - 리소스 생명주기 관리
 - 사용자 경험 개선
 
-### 3. 스트림 출력 속도 조절 및 청크 최적화 (난이도: ⭐⭐⭐)
+### 4. 스트림 출력 속도 조절 및 청크 최적화 (난이도: ⭐⭐⭐⭐)
 
 #### 문제점
 
@@ -204,9 +230,9 @@ class StreamThrottler {
 
 **구현 요구사항**:
 
-- 타이핑 효과로 점진적 텍스트 표시
-- 네트워크 속도 감지 및 적응형 조절
-- 청크 크기 동적 조정
+- 커서 이동 효과 구현
+- 적응형 속도 조절
+- 남은 문자열 길이 / queue에 남은 청크의 개수 등 현재 상태 기반 최적화
 - 사용자 설정으로 속도 커스터마이징
 - 코드 블록과 일반 텍스트 구분 처리
 
@@ -216,7 +242,7 @@ class StreamThrottler {
 - 적응형 알고리즘 설계
 - DOM 조작 최적화
 
-### 4. SSE 이벤트 처리 로직 최적화 (난이도: ⭐⭐⭐⭐)
+### 5. SSE 이벤트 처리 로직 최적화 (난이도: ⭐⭐⭐⭐⭐)
 
 #### 문제점
 
@@ -259,6 +285,7 @@ class OptimizedSSEHandler extends SSEStreamingHandler {
 - Web Worker를 활용한 압축 처리
 - 이벤트 순서 검증 및 재정렬
 - 자동 에러 복구 메커니즘
+- 유한 상태 기계 도입
 - 백프레셔(backpressure) 처리
 
 **학습 포인트**:
@@ -268,11 +295,11 @@ class OptimizedSSEHandler extends SSEStreamingHandler {
 - Web Worker 활용
 - 분산 시스템 개념
 
-## 🎨 UI/UX 개선 과제
+## 💡 추가 개선 아이디어
 
-### 5. 에러 상태 UI 개선 (난이도: ⭐⭐)
+### 에러 상태 UI 개선
 
-#### 개선 과제
+#### 개선 과제 (Assignment 2에 포함 가능)
 
 - 에러 유형별 아이콘 및 메시지
 - 재시도 버튼 추가
@@ -299,16 +326,17 @@ pnpm test --watch
 ```bash
 # 개선하고 싶은 영역으로 브랜치 생성 (본인 이름 포함)
 git checkout -b feature/system-analysis-{your-name}
+git checkout -b feature/component-enhancement-{your-name}
 git checkout -b feature/stream-abort-{your-name}
-git checkout -b feature/stream-throttle-{your-name}
-git checkout -b feature/sse-optimization-{your-name}
-git checkout -b feature/error-ui-{your-name}
+git checkout -b feature/print-optimization-{your-name}
+git checkout -b feature/logic-optimization-{your-name}
 
 # 예시:
-git checkout -b feature/system-analysis-jihoon
-git checkout -b feature/stream-abort-sarah
-git checkout -b feature/stream-throttle-alex
-git checkout -b feature/sse-optimization-mike
+git checkout -b feature/system-analysis-sth-sth-pinkishincoloragain
+git checkout -b feature/component-enhancement-sth-sth-pinkishincoloragain
+git checkout -b feature/stream-abort-sth-sth-pinkishincoloragain
+git checkout -b feature/print-optimization-sth-sth-pinkishincoloragain
+git checkout -b feature/logic-optimization-sth-sth-pinkishincoloragain
 ```
 
 ### 3. 구현 및 테스트
