@@ -2,9 +2,9 @@ import OpenAI from 'openai';
 
 export class OpenAIService {
     private client: OpenAI | null = null;
-    private model: string;
-    private maxTokens: number;
-    private temperature: number;
+    private model: string = 'gpt-4o-mini';
+    private maxTokens: number = 1000;
+    private temperature: number = 0.7;
     private initialized: boolean = false;
     private initError: string | null = null;
 
@@ -12,42 +12,9 @@ export class OpenAIService {
         this.initialize();
     }
 
-    private initialize() {
-        try {
-            const apiKey = process.env.OPENAI_API_KEY;
-            if (!apiKey || apiKey === 'your_openai_api_key_here') {
-                this.initError = 'OPENAI_API_KEY environment variable is not set or still has placeholder value';
-                console.warn('OpenAI service not initialized: API key not configured');
-                this.initialized = false;
-            } else {
-                this.client = new OpenAI({
-                    apiKey,
-                });
-                this.initialized = true;
-                this.initError = null;
-                console.log('OpenAI service initialized successfully');
-            }
-
-            // Configure model and settings from environment variables
-            this.model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-            this.maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || '1000');
-            this.temperature = parseFloat(process.env.OPENAI_TEMPERATURE || '0.7');
-        } catch (error) {
-            this.initError = `Failed to initialize OpenAI service: ${error}`;
-            console.error(this.initError);
-            this.initialized = false;
-        }
-    }
-
     // Method to reinitialize the service (useful when env vars change)
     reinitialize() {
         this.initialize();
-    }
-
-    private checkInitialized() {
-        if (!this.initialized || !this.client) {
-            throw new Error(this.initError || 'OpenAI service not properly initialized');
-        }
     }
 
     async createChatCompletion(messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[]) {
@@ -104,6 +71,39 @@ export class OpenAIService {
 
     getInitError(): string | null {
         return this.initError;
+    }
+
+    private initialize() {
+        try {
+            const apiKey = process.env.OPENAI_API_KEY;
+            if (!apiKey || apiKey === 'your_openai_api_key_here') {
+                this.initError = 'OPENAI_API_KEY environment variable is not set or still has placeholder value';
+                console.warn('OpenAI service not initialized: API key not configured');
+                this.initialized = false;
+            } else {
+                this.client = new OpenAI({
+                    apiKey,
+                });
+                this.initialized = true;
+                this.initError = null;
+                console.info('OpenAI service initialized successfully');
+            }
+
+            // Configure model and settings from environment variables
+            this.model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+            this.maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || '1000');
+            this.temperature = parseFloat(process.env.OPENAI_TEMPERATURE || '0.7');
+        } catch (error) {
+            this.initError = `Failed to initialize OpenAI service: ${error}`;
+            console.error(this.initError);
+            this.initialized = false;
+        }
+    }
+
+    private checkInitialized() {
+        if (!this.initialized || !this.client) {
+            throw new Error(this.initError || 'OpenAI service not properly initialized');
+        }
     }
 }
 

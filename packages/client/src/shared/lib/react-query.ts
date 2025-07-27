@@ -17,3 +17,16 @@ export const queryClient = new QueryClient({
         },
     },
 });
+
+export const QUERY_KEYS = {
+    threads: {
+        all: ['threads'] as const,
+        list: () => [...QUERY_KEYS.threads.all, 'list'] as const,
+        detail: (id: string) => [...QUERY_KEYS.threads.all, 'detail', id] as const,
+        messages: (id: string) => [...QUERY_KEYS.threads.all, 'messages', id] as const,
+    },
+    chat: {
+        all: ['chat'] as const,
+        messages: (threadId?: string) => [...QUERY_KEYS.chat.all, 'messages', threadId] as const,
+    },
+} as const;

@@ -1,16 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs/promises';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 import { ChatCompletionRequest, ChatCompletionResponse, ChatMessage } from 'shared/types/chat';
 import { openaiService } from '@/services/openai';
 import { fallbackService } from '@/services/fallback';
-import { threadManager, ChatThread } from '@/services/threadManager';
+import { threadManager } from '@/services/threadManager';
 import OpenAI from 'openai';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export function registerChatRoutes(fastify: FastifyInstance) {
     // GET all threads
@@ -121,7 +115,9 @@ export function registerChatRoutes(fastify: FastifyInstance) {
             threadManager.addMessageToThread(currentThreadId, userChatMessage);
 
             // Generate AI response
+            // eslint-disable-next-line no-console
             console.log('OpenAI initialized:', openaiService.isInitialized());
+            // eslint-disable-next-line no-console
             console.log('OpenAI init error:', openaiService.getInitError());
             if (!openaiService.isInitialized()) {
                 // Fallback service

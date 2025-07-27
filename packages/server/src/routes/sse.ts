@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
-import { ChatCompletionRequest } from 'shared/types/chat';
+import { ChatCompletionRequest } from '../../../shared/src/types/chat';
+import { openaiService } from '../services/openai';
+import { fallbackService } from '../services/fallback';
+import { threadManager } from '../services/threadManager';
 
 export function registerSSERoutes(fastify: FastifyInstance) {
     // SSE 라우트
@@ -19,40 +22,127 @@ export function registerSSERoutes(fastify: FastifyInstance) {
     fastify.post<{ Body: ChatCompletionRequest }>('/api/chat/sse', async (request, reply) => {
         try {
             const { messages, conversationId } = request.body;
-            const lastMessage = messages[messages.length - 1];
-
-            const responseContent = `이것은 "${lastMessage.content}"에 대한 SSE 응답입니다. 모의 API에서 생성된 답변입니다.`;
             const messageId = uuidv4();
-            const convoId = conversationId || uuidv4();
+            let currentThreadId = conversationId;
 
-            // 헤더 설정 (fastify-sse-v2는 자동으로 처리하지만 명시적으로 설정 가능)
+            // 헤더 설정
             reply.raw.setHeader('Content-Type', 'text/event-stream');
             reply.raw.setHeader('Cache-Control', 'no-cache');
             reply.raw.setHeader('Connection', 'keep-alive');
 
-            // 문자 단위로 스트리밍
-            for (let i = 0; i < responseContent.length; i++) {
-                const chunk = {
-                    id: messageId,
-                    content: responseContent.substring(0, i + 1),
-                    role: 'assistant',
-                    conversationId: convoId,
-                    isDone: i === responseContent.length - 1,
-                };
-
-                // 이벤트와 데이터 전송
-                reply.sse({
-                    event: 'message',
-                    data: JSON.stringify(chunk),
-                });
-
-                await new Promise((resolve) => setTimeout(resolve, 100));
+            // 스레드가 없으면 새로 생성
+            if (!currentThreadId) {
+                const newThread = threadManager.createThread(messages[0]?.content || 'New conversation');
+                currentThreadId = newThread.id;
             }
 
+            // 사용자 메시지를 스레드에 추가
+            const lastUserMessage = messages[messages.length - 1];
+            threadManager.addMessageToThread(currentThreadId, lastUserMessage);
+
+            let fullContent = '';
+
+            if (openaiService.isInitialized()) {
+                try {
+                    // OpenAI 스트리밍 사용
+                    const stream = await openaiService.createStreamingChatCompletion(
+                        messages.map((msg) => ({ role: msg.role, content: msg.content }))
+                    );
+
+                    for await (const chunk of stream) {
+                        const content = chunk.choices[0]?.delta?.content || '';
+                        if (content) {
+                            fullContent += content;
+
+                            const responseChunk = {
+                                id: messageId,
+                                content: fullContent,
+                                role: 'assistant' as const,
+                                conversationId: currentThreadId,
+                                isDone: false,
+                            };
+
+                            reply.sse({
+                                event: 'message',
+                                data: JSON.stringify(responseChunk),
+                            });
+                        }
+                    }
+                } catch (openaiError) {
+                    fastify.log.warn('OpenAI streaming failed, falling back to mock response:', openaiError);
+
+                    // OpenAI 실패 시 폴백
+                    const fallbackMessages = [{ role: lastUserMessage.role, content: lastUserMessage.content }];
+                    const fallbackStream = fallbackService.createMockStreamingCompletion(fallbackMessages);
+                    for await (const chunk of fallbackStream) {
+                        fullContent += chunk.content;
+
+                        const responseChunk = {
+                            id: messageId,
+                            content: fullContent,
+                            role: 'assistant' as const,
+                            conversationId: currentThreadId,
+                            isDone: chunk.isDone,
+                        };
+
+                        reply.sse({
+                            event: 'message',
+                            data: JSON.stringify(responseChunk),
+                        });
+
+                        if (chunk.isDone) break;
+                    }
+                }
+            } else {
+                // OpenAI가 초기화되지 않았으면 폴백 사용
+                const fallbackMessages = [{ role: lastUserMessage.role, content: lastUserMessage.content }];
+                const fallbackStream = fallbackService.createMockStreamingCompletion(fallbackMessages);
+                for await (const chunk of fallbackStream) {
+                    fullContent += chunk.content;
+
+                    const responseChunk = {
+                        id: messageId,
+                        content: fullContent,
+                        role: 'assistant' as const,
+                        conversationId: currentThreadId,
+                        isDone: chunk.isDone,
+                    };
+
+                    reply.sse({
+                        event: 'message',
+                        data: JSON.stringify(responseChunk),
+                    });
+
+                    if (chunk.isDone) break;
+                }
+            }
+
+            // 완료된 메시지를 스레드에 추가
+            const finalMessage = {
+                id: messageId,
+                role: 'assistant' as const,
+                content: fullContent,
+                createdAt: new Date().toISOString(),
+            };
+            threadManager.addMessageToThread(currentThreadId, finalMessage);
+
             // 완료 이벤트 전송
+            const finalChunk = {
+                id: messageId,
+                content: fullContent,
+                role: 'assistant' as const,
+                conversationId: currentThreadId,
+                isDone: true,
+            };
+
+            reply.sse({
+                event: 'message',
+                data: JSON.stringify(finalChunk),
+            });
+
             reply.sse({
                 event: 'done',
-                data: JSON.stringify({ conversationId: convoId }),
+                data: JSON.stringify({ conversationId: currentThreadId }),
             });
 
             // 연결 종료 신호
@@ -65,48 +155,5 @@ export function registerSSERoutes(fastify: FastifyInstance) {
             });
             reply.sse({ data: '[DONE]' });
         }
-    });
-
-    // WebSocket 라우트는 그대로 유지
-    fastify.register(async (fastify) => {
-        fastify.get('/api/ws', { websocket: true }, (connection, req) => {
-            connection.socket.on('message', async (message: string) => {
-                try {
-                    const data = JSON.parse(message.toString());
-                    const { messages, conversationId } = data;
-
-                    if (!messages || !messages.length) {
-                        connection.socket.send(JSON.stringify({ error: '메시지가 필요합니다.' }));
-                        return;
-                    }
-
-                    const lastMessage = messages[messages.length - 1];
-                    const responseContent = `이것은 "${lastMessage.content}"에 대한 WebSocket 응답입니다.`;
-                    const messageId = uuidv4();
-                    const convoId = conversationId || uuidv4();
-
-                    // 문자 단위로 스트리밍
-                    for (let i = 0; i < responseContent.length; i++) {
-                        const chunk = {
-                            id: messageId,
-                            content: responseContent.substring(0, i + 1),
-                            role: 'assistant',
-                            conversationId: convoId,
-                            isDone: i === responseContent.length - 1,
-                        };
-
-                        connection.socket.send(JSON.stringify(chunk));
-                        await new Promise((resolve) => setTimeout(resolve, 100));
-                    }
-                } catch (err) {
-                    fastify.log.error(err);
-                    connection.socket.send(JSON.stringify({ error: '처리 중 오류가 발생했습니다.' }));
-                }
-            });
-
-            connection.socket.on('close', () => {
-                fastify.log.info('WebSocket 연결이 닫혔습니다.');
-            });
-        });
     });
 }

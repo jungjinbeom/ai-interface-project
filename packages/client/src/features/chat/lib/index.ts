@@ -1,1 +1,2 @@
-export * from './useChatLogic';
+export * from './useChatViewModel';
+export * from './streamingHandler';

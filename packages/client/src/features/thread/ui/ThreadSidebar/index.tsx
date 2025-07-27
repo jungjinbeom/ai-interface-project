@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
-import { MessageSquare, Trash2, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, Trash2, Edit2, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { SearchInput, EmptyState } from '@/shared/ui';
 
-export interface Thread {
+export interface ThreadWithMessages {
     id: string;
     title: string;
-    messages: any[];
+    messages: { id: string; content: string; role: string }[];
     createdAt: string;
     updatedAt: string;
 }
+
+// Keep backward compatibility
+export type Thread = ThreadWithMessages;
 
 interface ThreadSidebarProps {
     threads: Thread[];
@@ -133,6 +137,17 @@ export const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
                         ))}
                     </div>
                 </ScrollArea>
+
+                {/* Collapsed Settings Button */}
+                <div className="p-2 border-t border-gray-700">
+                    <Link
+                        to="/settings"
+                        className="w-full p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors flex items-center justify-center"
+                        title="Settings"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -261,6 +276,17 @@ export const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
                     )}
                 </div>
             </ScrollArea>
+
+            {/* Expanded Settings Button */}
+            <div className="p-4 border-t border-gray-700">
+                <Link
+                    to="/settings"
+                    className="w-full p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors flex items-center space-x-3 group"
+                >
+                    <Settings className="w-5 h-5" />
+                    <span className="text-sm font-medium">Settings</span>
+                </Link>
+            </div>
         </div>
     );
 };

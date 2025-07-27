@@ -7,8 +7,8 @@ interface StreamingMarkdownProps {
     className?: string;
 }
 
-const StreamingMarkdown: React.FC<StreamingMarkdownProps> = ({ markdown, isStreaming = false, className = '' }) => (
-    <MarkdownRenderer content={markdown} isStreaming={isStreaming} className={className} />
-);
-
-export default StreamingMarkdown;
+export const StreamingMarkdown: React.FC<StreamingMarkdownProps> = ({
+    markdown,
+    isStreaming = false,
+    className = '',
+}) => <MarkdownRenderer content={markdown} isStreaming={isStreaming} className={className} />;

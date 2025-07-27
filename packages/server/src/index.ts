@@ -83,7 +83,7 @@ async function startServer() {
         },
         staticCSP: true,
         transformStaticCSP: (header) => header,
-        transformSpecification: (swaggerObject, request, reply) => swaggerObject,
+        transformSpecification: (swaggerObject, _request, _reply) => swaggerObject,
     });
 
     // 플러그인 등록
@@ -98,10 +98,13 @@ async function startServer() {
     // 서버 시작
     try {
         await fastify.listen({ port: 3001, host: '0.0.0.0' });
+        // eslint-disable-next-line no-console
         console.log('서버가 http://localhost:3001 에서 실행 중입니다.');
+        // eslint-disable-next-line no-console
         console.log('API 문서는 http://localhost:3001/documentation 에서 확인할 수 있습니다.');
 
         // Swagger JSON 엔드포인트 확인
+        // eslint-disable-next-line no-console
         console.log('Swagger JSON: http://localhost:3001/documentation/json');
     } catch (err) {
         fastify.log.error(err);

@@ -1,12 +1,18 @@
 import React from 'react';
-import { ChatMessage } from 'shared';
-import StreamingMarkdown from '@/shared/ui/StreamingMarkdown';
+import { ChatMessage } from '@/shared';
+import { StreamingMarkdown } from '@/shared/ui';
 
 interface MarkdownMessageItemProps {
     message: ChatMessage;
     streamingContent?: string;
     isStreaming?: boolean;
 }
+
+const getStatusStyles = (status?: string) => {
+    if (status === 'sending') return 'opacity-70';
+    if (status === 'error') return 'border border-red-500';
+    return '';
+};
 
 const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
     message,
@@ -27,20 +33,30 @@ const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
     );
 
     return (
-        <div className={`mb-4 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
                 className={`max-w-3/4 rounded-lg px-4 py-2 ${
                     isUser ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
-                } ${
-                    message.status === 'sending'
-                        ? 'opacity-70'
-                        : message.status === 'error'
-                          ? 'border border-red-500'
-                          : ''
+                } ${getStatusStyles(message.status)}
                 }`}
             >
                 {content}
-                {message.status === 'sending' && <div className="text-xs mt-1 opacity-70">전송 중...</div>}
+                {message.status === 'sending' && message.role === 'assistant' && (
+                    <div className="text-xs mt-1 opacity-70 flex items-center gap-1">
+                        <div className="flex gap-1">
+                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div
+                                className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"
+                                style={{ animationDelay: '0.2s' }}
+                            ></div>
+                            <div
+                                className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"
+                                style={{ animationDelay: '0.4s' }}
+                            ></div>
+                        </div>
+                        {message.content === '' ? '생각 중...' : '입력 중...'}
+                    </div>
+                )}
                 {message.status === 'error' && <div className="text-xs mt-1 text-red-400">오류 발생</div>}
             </div>
         </div>

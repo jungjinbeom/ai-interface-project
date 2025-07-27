@@ -1,10 +1,6 @@
-export interface ChatMessage {
-    id: string;
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    createdAt: string;
-    status: 'success' | 'error' | 'pending';
-}
+import { ChatMessage } from '@/shared';
+
+const API_BASE = '/api';
 
 export interface ChatCompletionRequest {
     messages: ChatMessage[];
@@ -17,6 +13,36 @@ export interface ChatCompletionResponse {
     conversationId: string;
 }
 
+export interface SSEMessageData {
+    id: string;
+    content: string;
+    role: 'assistant';
+    conversationId: string;
+    isDone: boolean;
+}
+
+export const chatApi = {
+    sendMessage: async (messages: ChatMessage[], conversationId?: string): Promise<Response> => {
+        const response = await fetch(`${API_BASE}/chat/sse`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messages,
+                conversationId,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response;
+    },
+};
+
+// Legacy support
 export const sendChatMessage = async (content: string, conversationId?: string): Promise<string> => {
     const messages: ChatMessage[] = [
         {
@@ -28,18 +54,13 @@ export const sendChatMessage = async (content: string, conversationId?: string):
         },
     ];
 
-    const requestBody: ChatCompletionRequest = {
-        messages,
-        conversationId,
-    };
-
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestBody),
+            body: JSON.stringify({ messages, conversationId }),
         });
 
         if (!response.ok) {
@@ -54,5 +75,4 @@ export const sendChatMessage = async (content: string, conversationId?: string):
     }
 };
 
-// Keep the old function for backward compatibility, but redirect to real API
 export const simulateApiCall = async (content: string): Promise<string> => sendChatMessage(content);

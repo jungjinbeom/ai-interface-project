@@ -1,7 +1,6 @@
 import React from 'react';
 import { MessageList } from '@/features/message';
-import InputBoxWithCompose from '../InputBoxWithCompose';
-import { useChatLogic } from '../../lib/useChatLogic';
+import { InputBoxWithCompose, useChatViewModel } from '@/features/chat';
 
 interface ChatContainerProps {
     threadId?: string;
@@ -9,7 +8,7 @@ interface ChatContainerProps {
 }
 
 const ChatContainer: React.FC<ChatContainerProps> = ({ threadId, onThreadCreated }) => {
-    const { messages, loading, handleSendMessage } = useChatLogic(threadId);
+    const { messages, loading, handleSendMessage } = useChatViewModel(threadId);
 
     const onSendMessage = async (content: string) => {
         const newThreadId = await handleSendMessage(content);
@@ -19,11 +18,11 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ threadId, onThreadCreated
     };
 
     return (
-        <div className="bg-gray-800 rounded-lg shadow-md h-[600px] flex flex-col border border-gray-700">
-            <div className="flex-1 overflow-hidden">
+        <div className="bg-gray-800 rounded-lg shadow-md h-full flex flex-col border border-gray-700 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
                 <MessageList messages={messages} />
             </div>
-            <div className="border-t border-gray-700 p-4">
+            <div className="border-t border-gray-700 p-4 flex-shrink-0">
                 <InputBoxWithCompose onSendMessage={onSendMessage} disabled={loading} />
             </div>
         </div>

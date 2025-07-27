@@ -19,8 +19,8 @@ export const AssistantCard: React.FC<AssistantCardProps> = ({
 }) => (
     <div
         className={`
-                group p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50
-                ${isActive ? 'bg-blue-50 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}
+                group p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-700
+                ${isActive ? 'bg-blue-900 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}
             `}
         onClick={() => onSelect?.(assistant)}
     >
@@ -28,14 +28,14 @@ export const AssistantCard: React.FC<AssistantCardProps> = ({
             <div className="flex items-start space-x-3 flex-1 min-w-0">
                 <Bot className="w-4 h-4 mt-1 text-gray-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{assistant.name}</h3>
-                    <p className="text-xs text-gray-500 truncate mt-1">{assistant.description}</p>
+                    <h3 className="text-sm font-medium text-gray-100 truncate">{assistant.name}</h3>
+                    <p className="text-xs text-gray-400 truncate mt-1">{assistant.description}</p>
                     <div className="flex items-center space-x-2 mt-2">
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">{assistant.model}</span>
+                        <span className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">{assistant.model}</span>
                         {onViewDetails && (
                             <button
                                 onClick={(e) => onViewDetails(assistant, e)}
-                                className="text-xs text-blue-500 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="text-xs text-blue-400 hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 View details
                             </button>
@@ -46,7 +46,7 @@ export const AssistantCard: React.FC<AssistantCardProps> = ({
             {onEdit && (
                 <button
                     onClick={(e) => onEdit(assistant, e)}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 text-gray-400 hover:text-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Edit Assistant"
                 >
                     <Settings className="w-3 h-3" />

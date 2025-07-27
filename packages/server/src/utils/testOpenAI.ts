@@ -51,17 +51,20 @@ export async function testOpenAIConnection(): Promise<{ success: boolean; messag
             message: 'OpenAI API connection successful',
             model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         let errorMessage = 'Unknown error occurred';
 
-        if (error.status === 401) {
-            errorMessage = 'Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.';
-        } else if (error.status === 429) {
-            errorMessage = 'OpenAI API rate limit exceeded or insufficient credits.';
-        } else if (error.status === 503) {
-            errorMessage = 'OpenAI API is currently unavailable. Please try again later.';
-        } else if (error.message) {
-            errorMessage = `OpenAI API Error: ${error.message}`;
+        if (error && typeof error === 'object' && 'status' in error) {
+            const statusError = error as { status: number; message?: string };
+            if (statusError.status === 401) {
+                errorMessage = 'Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.';
+            } else if (statusError.status === 429) {
+                errorMessage = 'OpenAI API rate limit exceeded or insufficient credits.';
+            } else if (statusError.status === 503) {
+                errorMessage = 'OpenAI API is currently unavailable. Please try again later.';
+            } else if (statusError.message) {
+                errorMessage = `OpenAI API Error: ${statusError.message}`;
+            }
         }
 
         return {
@@ -72,26 +75,39 @@ export async function testOpenAIConnection(): Promise<{ success: boolean; messag
 }
 
 export async function runOpenAITest(): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log('🔍 Testing OpenAI API configuration...\n');
 
     const result = await testOpenAIConnection();
 
     if (result.success) {
+        // eslint-disable-next-line no-console
         console.log('✅ OpenAI API Test Results:');
+        // eslint-disable-next-line no-console
         console.log(`   Status: ${result.message}`);
+        // eslint-disable-next-line no-console
         console.log(`   Model: ${result.model}`);
+        // eslint-disable-next-line no-console
         console.log(
             `   API Key: ${process.env.OPENAI_API_KEY?.substring(0, 7)}...${process.env.OPENAI_API_KEY?.slice(-4)}`
         );
     } else {
+        // eslint-disable-next-line no-console
         console.log('❌ OpenAI API Test Failed:');
+        // eslint-disable-next-line no-console
         console.log(`   Error: ${result.message}`);
+        // eslint-disable-next-line no-console
         console.log('\n💡 Troubleshooting tips:');
+        // eslint-disable-next-line no-console
         console.log('   1. Make sure .env file exists in the project root');
+        // eslint-disable-next-line no-console
         console.log('   2. Check that OPENAI_API_KEY is set correctly');
+        // eslint-disable-next-line no-console
         console.log('   3. Verify your OpenAI account has sufficient credits');
+        // eslint-disable-next-line no-console
         console.log('   4. Ensure your API key has not expired');
     }
 
+    // eslint-disable-next-line no-console
     console.log('\n' + '='.repeat(50));
 }
