@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MessageItem } from '@/features/message';
-import { ChatMessage } from '@/shared';
+import type { ChatMessage } from '@/entities/message';
 
 interface MessageListProps {
     messages: ChatMessage[];

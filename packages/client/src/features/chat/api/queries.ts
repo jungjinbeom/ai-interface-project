@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { chatApi, SSEMessageData } from './chatApi';
+import { chatApi } from './chatApi';
 import { useChatStore } from '../model/store';
-import { ChatMessage } from '@/shared';
-import { v4 as uuidv4 } from 'uuid';
+import { MessageFactory, type ChatMessage } from '@/entities/message';
+import type { SSEMessageData } from '@/shared/api';
 import { QUERY_KEYS } from '@/shared/lib/react-query';
 import { createStreamingHandler, StreamingEvent } from '../lib/streamingHandler';
 
@@ -25,13 +25,7 @@ export const useSendMessageMutation = () => {
             setLoading(true);
 
             // Create user message
-            const userMessage: ChatMessage = {
-                id: uuidv4(),
-                role: 'user',
-                content,
-                createdAt: new Date().toISOString(),
-                status: 'success',
-            };
+            const userMessage = MessageFactory.createUserMessage(content);
 
             addMessage(userMessage);
 
@@ -46,18 +40,12 @@ export const useSendMessageMutation = () => {
                 const response = await chatApi.sendMessage(currentMessages, threadId || currentThreadId);
 
                 // Create placeholder assistant message
-                const assistantPlaceholderId = uuidv4();
-                const assistantPlaceholder: ChatMessage = {
-                    id: assistantPlaceholderId,
-                    role: 'assistant',
-                    content: '',
-                    createdAt: new Date().toISOString(),
-                    status: 'sending',
-                };
+                const assistantPlaceholder = MessageFactory.createAssistantMessage('');
                 addMessage(assistantPlaceholder);
 
                 // Process SSE stream with the new streaming handler
-                let assistantMessageId: string | null = assistantPlaceholderId;
+                let assistantMessageId: string | null = assistantPlaceholder.id;
+                let accumulatedContent = '';
 
                 // TODO: Group Study 개선 과제
                 // 1. 메시지 상태 관리 최적화: 낙관적 업데이트 vs 서버 확인 전략
@@ -66,9 +54,9 @@ export const useSendMessageMutation = () => {
                 // 4. 실시간 타이핑 인디케이터: 더 정교한 사용자 피드백
 
                 const streamingHandler = createStreamingHandler({
-                    messageId: assistantPlaceholderId,
+                    messageId: assistantPlaceholder.id,
                     currentThreadId: threadId || currentThreadId,
-                    timeout: 30000,
+                    timeout: 60000,
 
                     // 스트리밍 이벤트 처리
                     onEvent: (event: StreamingEvent) => {
@@ -93,10 +81,13 @@ export const useSendMessageMutation = () => {
 
                             // 어시스턴트 메시지 업데이트
                             if (messageData.content !== undefined) {
+                                // 스트리밍 컨텐츠 누적
+                                accumulatedContent += messageData.content;
+
                                 const assistantMessage: ChatMessage = {
                                     id: assistantMessageId!,
                                     role: 'assistant',
-                                    content: messageData.content,
+                                    content: accumulatedContent,
                                     createdAt: new Date().toISOString(),
                                     status: messageData.isDone ? 'success' : 'sending',
                                 };
@@ -120,10 +111,16 @@ export const useSendMessageMutation = () => {
                     },
 
                     // 완료 처리
-                    onComplete: (_responseThreadId) => {
+                    onComplete: (responseThreadId) => {
                         setLoading(false);
                         if (assistantMessageId) {
                             updateMessage(assistantMessageId, { status: 'success' });
+                        }
+
+                        // Invalidate queries after streaming completes
+                        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.list() });
+                        if (responseThreadId) {
+                            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.messages(responseThreadId) });
                         }
                     },
 
@@ -149,14 +146,8 @@ export const useSendMessageMutation = () => {
                 throw error;
             }
         },
-        onSuccess: (responseThreadId) => {
-            // Invalidate thread queries when a message is sent
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.list() });
-
-            // Invalidate thread messages for the current thread
-            if (responseThreadId) {
-                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.messages(responseThreadId) });
-            }
+        onSuccess: (_responseThreadId) => {
+            // Query invalidation is now handled in the streaming completion handler
         },
         onError: (error) => {
             console.error('Failed to send message:', error);

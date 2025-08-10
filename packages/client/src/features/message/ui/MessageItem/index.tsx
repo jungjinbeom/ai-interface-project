@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChatMessage } from '@/shared';
+import type { ChatMessage } from '@/entities/message';
 import { StreamingMarkdown } from '@/shared/ui';
 
 interface MarkdownMessageItemProps {

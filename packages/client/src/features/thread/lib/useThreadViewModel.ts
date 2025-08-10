@@ -1,4 +1,4 @@
-import { useThreadStore } from '../model/store';
+import { useThreadStore } from '@/features';
 import { useThreadsQuery, useCreateThreadMutation, useUpdateThreadMutation, useDeleteThreadMutation } from '../api';
 
 export const useThreadViewModel = () => {
@@ -11,9 +11,9 @@ export const useThreadViewModel = () => {
 
     const createThread = async (title?: string) => {
         try {
-            const result = await createThreadMutation.mutateAsync({ title });
-            setSelectedThreadId(result.thread.id);
-            return result.thread;
+            const result = await createThreadMutation.mutateAsync({ title: title || 'New Chat' });
+            setSelectedThreadId((result as any).thread.id);
+            return (result as any).thread;
         } catch (error) {
             console.error('Failed to create thread:', error);
             return null;

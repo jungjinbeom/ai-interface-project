@@ -1,16 +1,15 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/shared/lib/react-query';
-import { threadApi } from './threadApi';
-import { useThreadStore } from '../model/store';
-import { useChatStore } from '../../chat/model/store';
+import { threadApiClient } from './client';
+import { useChatStore, useThreadStore } from '@/features';
 
 export const useThreadsQuery = () => {
     const setThreads = useThreadStore((state) => state.setThreads);
 
     const query = useQuery({
         queryKey: QUERY_KEYS.threads.list(),
-        queryFn: threadApi.getThreads,
+        queryFn: threadApiClient.getThreads.bind(threadApiClient),
     });
 
     // Update store when data changes
@@ -26,25 +25,31 @@ export const useThreadsQuery = () => {
 export const useThreadQuery = (threadId: string) =>
     useQuery({
         queryKey: QUERY_KEYS.threads.detail(threadId),
-        queryFn: () => threadApi.getThread(threadId),
+        queryFn: () => threadApiClient.getThread(threadId),
         enabled: !!threadId,
     });
 
 export const useThreadMessagesQuery = (threadId?: string) => {
     const setMessages = useChatStore((state) => state.setMessages);
+    const currentMessages = useChatStore((state) => state.messages);
+    const loading = useChatStore((state) => state.loading);
 
     const query = useQuery({
         queryKey: QUERY_KEYS.threads.messages(threadId || ''),
-        queryFn: () => threadApi.getThreadMessages(threadId!),
+        queryFn: () => threadApiClient.getThreadMessages(threadId!),
         enabled: !!threadId,
     });
 
-    // Update store when data changes
+    // Update store when data changes, but avoid overwriting during active streaming
     React.useEffect(() => {
-        if (query.data && threadId) {
-            setMessages(query.data.thread.messages || []);
+        if (query.data && threadId && !loading) {
+            // Only update if we don't have messages or if there's no active streaming
+            const hasStreamingMessage = currentMessages.some((msg) => msg.status === 'sending');
+            if (!hasStreamingMessage) {
+                setMessages(query.data.thread.messages || []);
+            }
         }
-    }, [query.data, threadId, setMessages]);
+    }, [query.data, threadId, setMessages, loading, currentMessages]);
 
     return query;
 };
@@ -54,8 +59,8 @@ export const useCreateThreadMutation = () => {
     const addThread = useThreadStore((state) => state.addThread);
 
     return useMutation({
-        mutationFn: threadApi.createThread,
-        onSuccess: (data) => {
+        mutationFn: threadApiClient.createThread.bind(threadApiClient),
+        onSuccess: (data: any) => {
             addThread(data.thread);
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.list() });
         },
@@ -68,7 +73,7 @@ export const useUpdateThreadMutation = () => {
 
     return useMutation({
         mutationFn: ({ threadId, data }: { threadId: string; data: { title: string } }) =>
-            threadApi.updateThread(threadId, data),
+            threadApiClient.updateThread(threadId, data),
         onSuccess: (data, variables) => {
             updateThread(variables.threadId, data.thread);
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.list() });
@@ -82,8 +87,8 @@ export const useDeleteThreadMutation = () => {
     const removeThread = useThreadStore((state) => state.removeThread);
 
     return useMutation({
-        mutationFn: threadApi.deleteThread,
-        onSuccess: (_, threadId) => {
+        mutationFn: (threadId: string) => threadApiClient.deleteThread(threadId),
+        onSuccess: (_, threadId: string) => {
             removeThread(threadId);
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.threads.list() });
         },

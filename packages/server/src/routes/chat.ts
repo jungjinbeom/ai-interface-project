@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatCompletionRequest, ChatCompletionResponse, ChatMessage } from 'shared/types/chat';
-import { openaiService } from '@/services/openai';
-import { fallbackService } from '@/services/fallback';
-import { threadManager } from '@/services/threadManager';
+import { openaiService } from '../services/openai.js';
+import { fallbackService } from '../services/fallback.js';
+import { threadManager } from '../services/threadManager.js';
 import OpenAI from 'openai';
 
 export function registerChatRoutes(fastify: FastifyInstance) {
@@ -24,12 +24,8 @@ export function registerChatRoutes(fastify: FastifyInstance) {
     fastify.get<{ Params: { id: string } }>('/api/threads/:id', async (request, reply) => {
         try {
             const { id } = request.params;
-            const thread = threadManager.getThread(id);
-
-            if (!thread) {
-                return reply.code(404).send({ error: 'Thread not found' });
-            }
-
+            // Use getOrCreateThread to handle missing threads gracefully
+            const thread = threadManager.getOrCreateThread(id, 'Recovered Chat');
             return reply.send({ thread });
         } catch (err) {
             fastify.log.error(err);
@@ -62,6 +58,23 @@ export function registerChatRoutes(fastify: FastifyInstance) {
         } catch (err) {
             fastify.log.error(err);
             return reply.code(500).send({ error: 'Failed to delete thread' });
+        }
+    });
+
+    // GET thread messages
+    fastify.get<{ Params: { id: string } }>('/api/threads/:id/messages', async (request, reply) => {
+        try {
+            const { id } = request.params;
+            const thread = threadManager.getThread(id);
+
+            if (!thread) {
+                return reply.code(404).send({ error: 'Thread not found' });
+            }
+
+            return reply.send({ thread });
+        } catch (err) {
+            fastify.log.error(err);
+            return reply.code(500).send({ error: 'Failed to get thread messages' });
         }
     });
 

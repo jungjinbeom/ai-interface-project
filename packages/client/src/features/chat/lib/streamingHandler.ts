@@ -1,4 +1,4 @@
-import { SSEMessageData } from '../api/chatApi';
+import type { SSEMessageData } from '@/shared/api';
 
 /**
  * SSE 스트리밍 이벤트 타입 정의

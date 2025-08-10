@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { ChatMessage } from '@/shared';
+import type { ChatMessage } from '@/entities/message';
 
 export interface ChatState {
     messages: ChatMessage[];
