@@ -25,20 +25,29 @@ const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
     const content = isUser ? (
         <div className="whitespace-pre-wrap">{message.content}</div>
     ) : (
-        <StreamingMarkdown
-            markdown={isStreaming ? streamingContent || '' : message.content}
-            isStreaming={isStreaming}
-            className="prose prose-sm max-w-none prose-invert prose-pre:bg-gray-700 prose-pre:p-2"
-        />
+        <>
+            <StreamingMarkdown
+                markdown={
+                    // isStreaming ? streamingContent || '' :
+                    message.content
+                }
+                isStreaming={isStreaming}
+                className="prose prose-sm max-w-none prose-invert prose-pre:bg-gray-700 prose-pre:p-2"
+            />
+        </>
     );
 
     return (
         <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+            {/**
+             * 콘텐츠가 많으면 x축 스크롤 생겨 보기 불편함
+             * 메시지 템플릿에 맞게 마크다운 템플릿 너비 조정, 콘텐츠 길이에 맞게 너비 조정
+             *
+             */}
             <div
-                className={`max-w-3/4 rounded-lg px-4 py-2 ${
-                    isUser ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
-                } ${getStatusStyles(message.status)}
-                }`}
+                className={`rounded-lg px-4 py-2 ${
+                    isUser ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white max-w-full w-auto break-words'
+                } ${getStatusStyles(message.status)}`}
             >
                 {content}
                 {message.status === 'sending' && message.role === 'assistant' && (
@@ -57,10 +66,11 @@ const MarkdownMessageItem: React.FC<MarkdownMessageItemProps> = ({
                         {message.content === '' ? '생각 중...' : '입력 중...'}
                     </div>
                 )}
+
                 {message.status === 'error' && <div className="text-xs mt-1 text-red-400">오류 발생</div>}
             </div>
         </div>
     );
 };
 
-export default MarkdownMessageItem;
+export default React.memo(MarkdownMessageItem);

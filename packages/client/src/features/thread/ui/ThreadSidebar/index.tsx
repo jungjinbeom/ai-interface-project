@@ -44,6 +44,7 @@ export const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
+    const [hover, setHover] = useState(false);
 
     const filteredThreads = threads.filter((thread) => thread.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -95,15 +96,33 @@ export const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
             <div className={`flex flex-col h-full bg-gray-900 border-r border-gray-700 ${className}`}>
                 {/* Collapsed Header */}
                 <div className="p-4 border-b border-gray-700">
-                    <div className="flex items-center justify-between">
-                        <MessageSquare className="w-6 h-6 text-gray-300" />
-                        <button
-                            onClick={onToggleCollapse}
-                            className="p-1 text-gray-400 hover:text-gray-200 rounded"
-                            title="Expand sidebar"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
+                    <div className="flex items-center justify-center">
+                        {!hover ? (
+                            /**
+                             *
+                             * isCollapsed 상태 시 MessageSquare 아이콘, ChevronRight 아이콘 UI 부자연스럽게 변경
+                             *
+                             * 마우스 hover 통해 처음에는 MessageSquare 아이콘에서 hover 시 ChevronRight 아이콘으로 변경
+                             *
+                             * ex) ChatGPT
+                             *
+                             * 새로운 로고 변경 예정
+                             *
+                             */
+                            <MessageSquare className="w-6 h-6 text-gray-300" onMouseMove={() => setHover(true)} />
+                        ) : (
+                            <button
+                                onClick={() => {
+                                    setHover(false);
+                                    onToggleCollapse?.();
+                                }}
+                                className="p-1 text-gray-400 hover:text-gray-200 rounded"
+                                title="Expand sidebar"
+                                onMouseLeave={() => setHover(false)}
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -122,18 +141,29 @@ export const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
                 <ScrollArea className="flex-1">
                     <div className="p-2 space-y-1">
                         {threads.slice(0, 10).map((thread) => (
-                            <button
+                            /**
+                             *
+                             * 마우스 커서 효과 추가
+                             * 사이드바 collapsed 상태에서 아이콘 대신 텍스트 대신 타이틀 표시
+                             *
+                             * 추후 사이드 바에 채팅 히스토리 아이콘을 추가 클릭 후
+                             * 메인 콘텐츠에 채팅 히스토리 UI 보일 수 있도록 고도화 예정
+                             *
+                             * ex) Cluade, ChatGPT
+                             *
+                             */
+                            <div
                                 key={thread.id}
                                 onClick={() => onThreadSelect?.(thread)}
-                                className={`w-full p-2 rounded-lg transition-colors ${
+                                className={`w-full p-2 rounded-lg transition-colors truncate cursor-pointer ${
                                     thread.id === activeThreadId
                                         ? 'bg-blue-600 text-white'
                                         : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
                                 }`}
                                 title={thread.title}
                             >
-                                <MessageSquare className="w-4 h-4 mx-auto" />
-                            </button>
+                                <span className="text-sm font-medium">{thread.title}</span>
+                            </div>
                         ))}
                     </div>
                 </ScrollArea>

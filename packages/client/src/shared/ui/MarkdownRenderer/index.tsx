@@ -188,7 +188,11 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(
                             </h3>
                         ),
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        p: (props: any) => <p style={{ lineHeight: '1.6', marginBottom: '1rem' }}>{props.children}</p>,
+                        p: (props: any) => (
+                            <p className="las" style={{ lineHeight: '1.6' }}>
+                                {props.children}
+                            </p>
+                        ),
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         ul: (props: any) => (
                             <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem' }}>{props.children}</ul>

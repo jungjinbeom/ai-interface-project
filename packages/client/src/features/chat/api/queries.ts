@@ -18,6 +18,7 @@ export const useSendMessageMutation = () => {
     const removeMessage = useChatStore((state) => state.removeMessage);
     const setCurrentThreadId = useChatStore((state) => state.setCurrentThreadId);
     const setLoading = useChatStore((state) => state.setLoading);
+    const setIsStreaming = useChatStore((state) => state.setIsStreaming);
     const currentThreadId = useChatStore((state) => state.currentThreadId);
 
     return useMutation({
@@ -64,7 +65,7 @@ export const useSendMessageMutation = () => {
                 // 2. 오프라인 지원: 네트워크 끊김 시 메시지 큐잉
                 // 3. 메시지 중복 방지: 재전송 시 중복 메시지 처리
                 // 4. 실시간 타이핑 인디케이터: 더 정교한 사용자 피드백
-
+                setIsStreaming(true);
                 const streamingHandler = createStreamingHandler({
                     messageId: assistantPlaceholderId,
                     currentThreadId: threadId || currentThreadId,
@@ -130,6 +131,7 @@ export const useSendMessageMutation = () => {
                     // 에러 처리
                     onError: (error) => {
                         setLoading(false);
+                        setIsStreaming(false);
                         if (assistantMessageId) {
                             updateMessage(assistantMessageId, { status: 'error' });
                         }
@@ -140,6 +142,7 @@ export const useSendMessageMutation = () => {
                 return streamingHandler.handleStream(response);
             } catch (error) {
                 setLoading(false);
+                setIsStreaming(false);
                 // If we have an assistant message placeholder, mark it as error
                 const currentMessages = useChatStore.getState().messages;
                 const assistantMessage = currentMessages.find((m) => m.role === 'assistant' && m.status === 'sending');
@@ -161,6 +164,7 @@ export const useSendMessageMutation = () => {
         onError: (error) => {
             console.error('Failed to send message:', error);
             setLoading(false);
+            setIsStreaming(false);
         },
     });
 };

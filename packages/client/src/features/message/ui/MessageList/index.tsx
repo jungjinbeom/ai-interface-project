@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
 import { MessageItem } from '@/features/message';
 import { ChatMessage } from '@/shared';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface MessageListProps {
     messages: ChatMessage[];
@@ -79,7 +79,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                 ) : (
                     <div className="space-y-4">
                         {messages.map((message) => (
-                            <MessageItem key={message.id} message={message} />
+                            <MessageItem
+                                key={message.id}
+                                message={message}
+                                isStreaming={message.status === 'sending'}
+                            />
                         ))}
                     </div>
                 )}
@@ -107,4 +111,4 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     );
 };
 
-export default MessageList;
+export default React.memo(MessageList);

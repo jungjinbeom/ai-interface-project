@@ -6,6 +6,7 @@ export interface ChatState {
     messages: ChatMessage[];
     currentThreadId?: string;
     loading: boolean;
+    isStreaming: boolean;
 
     // Actions
     setMessages: (messages: ChatMessage[]) => void;
@@ -14,6 +15,7 @@ export interface ChatState {
     removeMessage: (messageId: string) => void;
     setCurrentThreadId: (threadId?: string) => void;
     setLoading: (loading: boolean) => void;
+    setIsStreaming: (isStreaming: boolean) => void;
     clearMessages: () => void;
 }
 
@@ -23,6 +25,7 @@ export const useChatStore = create<ChatState>()(
             messages: [],
             currentThreadId: undefined,
             loading: false,
+            isStreaming: false,
 
             setMessages: (messages) => set({ messages }),
 
@@ -41,6 +44,7 @@ export const useChatStore = create<ChatState>()(
             setCurrentThreadId: (threadId) => set({ currentThreadId: threadId }),
 
             setLoading: (loading) => set({ loading }),
+            setIsStreaming: (isStreaming) => set({ isStreaming }),
 
             clearMessages: () => set({ messages: [] }),
         }),
