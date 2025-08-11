@@ -35,11 +35,13 @@
 ## 개선 사항
 
 ```typescript
-- InputBox
-  이유 : abort 기능 및 버튼을 통해 AI 제대로 호출 했는지 여부를 알기 위해 추가
-  개선 : API 호출 시 정지 기능에 대한 아이콘
+1. InputBox
+  이유
+   - abort 기능 및 버튼을 통해 AI 제대로 호출 했는지 여부를 알기 위해 추가
+  개선
+   - API 호출 시 정지 기능에 대한 아이콘
   
-- ThreadSidebar
+2. ThreadSidebar
   이유
    - isCollapsed 상태 시 MessageSquare 아이콘, ChevronRight 아이콘 UI 부자연스럽게 변경
   개선
@@ -49,12 +51,16 @@
    - 채팅 목록 아이콘 클릭 시 메인 컨텐츠 채팅 목록 UI로 변경 
   참고 - ChatGPT
 
-- MarkdownMessageItem
-  이유 : AI 컨텐츠 내용에 길이 따라 너비가 초과되어 스크롤이 생김
-  개선 : 메시지 템플릿에 맞게 마크다운 템플릿 너비 조정, 콘텐츠 길이에 맞게 너비 조정
+3. MarkdownMessageItem
+  이유
+   - AI 컨텐츠 내용에 길이 따라 너비가 초과되어 스크롤이 생김
+  개선
+   - 메시지 템플릿에 맞게 마크다운 템플릿 너비 조정, 콘텐츠 길이에 맞게 너비 조정
 
-- useChatStore isStreaming 상태, SetIsStreaming 상태 변경 함수 추가
-  이유 : API 호출 이후 streaming 처리에 대한 상태를 관리하고 isStreaming 상태를 사용하여 세밀한 컴포넌트 조작을 위해
-  추후 개선 사항 : isStreaming 상태를 사용한 Loading 컴포넌트 추가 예정 
+4. useChatStore isStreaming 상태, SetIsStreaming 상태 변경 함수 추가
+  이유
+   - API 호출 이후 streaming 처리에 대한 상태를 관리하고 isStreaming 상태를 사용하여 세밀한 컴포넌트 조작을 위해
+  추후 개선 사항
+   - isStreaming 상태를 사용한 Loading 컴포넌트 추가 예정 
 
 ```
