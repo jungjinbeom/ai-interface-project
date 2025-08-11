@@ -42,11 +42,11 @@
    - API 호출 시 정지 기능에 대한 아이콘
   
 2. ThreadSidebar
-  **이유**
+  ** 이유 **
    - isCollapsed 상태 시 MessageSquare 아이콘, ChevronRight 아이콘 UI 부자연스럽게 변경
-  **개선**
+  ** 개선 **
    - 마우스 hover 통해 처음에는 MessageSquare 아이콘에서 hover 시 ChevronRight 아이콘으로 변경
-  **추후 개선사항**
+  ** 추후 개선사항 **
    - 채팅 목록 아이콘, 채팅 목록 UI 추가 예정
    - 채팅 목록 아이콘 클릭 시 메인 컨텐츠 채팅 목록 UI로 변경 
   **참고**
