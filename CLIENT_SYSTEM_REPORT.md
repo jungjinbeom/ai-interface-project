@@ -3,7 +3,7 @@
 #### 범위
 
 - 본 문서는 클라이언트 내 스트리밍 SSE 처리 및 연관 로직에 한정합니다.
-- 주요 파일: `features/chat/api/{client.ts, chatApi.ts, queries.ts}`, `features/chat/lib/streamingHandler.ts`, `shared/api/base.ts`.
+- 주요 파일: `features/chat/api/{client.ts, chatApi.ts, queries.ts}`, `features/chat/lib/streamingHandler.ts`, `shared/api/base.ts`
 
 #### 구성 요소 개요
 
